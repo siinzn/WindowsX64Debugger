@@ -1,5 +1,6 @@
 ﻿// WindowsX64Debugger.h : Include file for standard system include files,
 // or project specific include files.
+// TODO: Reference additional headers your program requires here.
 
 #pragma once
 
@@ -7,4 +8,10 @@
 #include <Windows.h>
 #include <minwinbase.h>
 #include <debugapi.h>
-// TODO: Reference additional headers your program requires here.
+#include <string>
+
+//declarations
+bool debugRelationship = TRUE;
+DEBUG_EVENT debugEvent;
+DWORD uprocessId;
+HANDLE processHandle;
