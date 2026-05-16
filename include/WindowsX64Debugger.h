@@ -5,13 +5,13 @@
 #pragma once
 
 #include <iostream>
+#include <cstdint>
 #include <Windows.h>
 #include <minwinbase.h>
 #include <debugapi.h>
 #include <string>
+#include <vector>
 
-//declarations
-bool debugRelationship = TRUE;
-DEBUG_EVENT debugEvent;
-DWORD uprocessId;
-HANDLE processHandle;
+void printDebugEvent(DWORD debug_ec);
+void installBreakPoint();
+uintptr_t convertToAddress(char* hex);
