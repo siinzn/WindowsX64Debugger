@@ -1,8 +1,5 @@
 ﻿#include "WindowsX64Debugger.h"
 
-#define DEBUG_PROCESS 0x00000001
-#define DEBUG_ONLY_THIS_PROCESS 0x00000002
-
 BOOL debugRelationship = TRUE;
 DEBUG_EVENT debugEvent;
 STARTUPINFO sInfo;
@@ -13,6 +10,7 @@ LPVOID base_address;
 BYTE original_byte;
 BYTE debug = 0xCC;
 DWORD old_protection;
+CONTEXT context;
 
 void printDebugEvent(DWORD debug_ec) {
 	switch (debug_ec) {
@@ -35,8 +33,7 @@ void installBreakPoint() {
 	WriteProcessMemory(process_handle, base_address, &debug, 1, nullptr);
 	VirtualProtectEx(process_handle, base_address, 1, old_protection, &old_protection);
 	FlushInstructionCache(process_handle, base_address, 1);
-	
-	std::cout << "[+] Software Breakpoint (0xCC) successfully installed at base address: " << base_address << "\n";
+	std::cout << "Software Breakpoint (0xCC) successfully installed at base address: " << base_address << "\n";
 }
 
 uintptr_t convertToAddress(char* hex) {
@@ -54,6 +51,8 @@ int main(int argc, char* argv[])
 	ZeroMemory(&sInfo, sizeof(sInfo));
 	sInfo.cb = sizeof(sInfo);
 	ZeroMemory(&pInfo, sizeof(pInfo));
+	ZeroMemory(&context, sizeof(context));
+	context.ContextFlags = CONTEXT_ALL;
 
 	applicationPath = argv[1];
 	if (!CreateProcessA(applicationPath, NULL, NULL, NULL, FALSE, DEBUG_ONLY_THIS_PROCESS, NULL, NULL, &sInfo, &pInfo)) {
@@ -67,6 +66,7 @@ int main(int argc, char* argv[])
 		if (!WaitForDebugEvent(&debugEvent, INFINITE)) {
 			break;
 		}
+
 		switch (debugEvent.dwDebugEventCode)
 		{
 		case CREATE_PROCESS_DEBUG_EVENT:
@@ -74,12 +74,21 @@ int main(int argc, char* argv[])
 			base_address = reinterpret_cast<LPVOID>(convertToAddress(argv[2]));
 			installBreakPoint();
 			break;
-		case EXIT_PROCESS_DEBUG_EVENT:
+		case EXCEPTION_DEBUG_EVENT: 
+			if (debugEvent.u.Exception.ExceptionRecord.ExceptionAddress != base_address) break;
 			printDebugEvent(debugEvent.dwDebugEventCode);
-			debugRelationship = FALSE;
+			if (debugEvent.u.Exception.ExceptionRecord.ExceptionCode != EXCEPTION_BREAKPOINT) break; 
+			GetThreadContext(pInfo.hThread, &context);
+			context.Rip -= 1;
+			WriteProcessMemory(process_handle, base_address, &original_byte, 1, nullptr);
+			SetThreadContext(pInfo.hThread, &context);
+			std::cout << "Breakpoint hit at address : " << base_address << "\n";
 			break;
-		default:
-			printDebugEvent(debugEvent.dwDebugEventCode);
+		case EXIT_PROCESS_DEBUG_EVENT: 
+			printDebugEvent(debugEvent.dwDebugEventCode); debugRelationship = FALSE; 
+			break;
+		default: 
+			printDebugEvent(debugEvent.dwDebugEventCode); 
 			break;
 		}
 		ContinueDebugEvent(debugEvent.dwProcessId, debugEvent.dwThreadId, DBG_CONTINUE);
