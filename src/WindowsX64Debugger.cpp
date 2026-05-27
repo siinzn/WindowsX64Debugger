@@ -40,6 +40,33 @@ uintptr_t convertToAddress(char* hex) {
 	return std::stoull(hex, nullptr, 0);
 }
 
+void printContextFlags(CONTEXT context) {
+	std::cout << std::hex << std::uppercase;
+
+	std::cout << "--- REGISTER DUMP ---\n";
+	std::cout << "RAX: 0x" << context.Rax << "\n";
+	std::cout << "RBX: 0x" << context.Rbx << "\n";
+	std::cout << "RCX: 0x" << context.Rcx << "\n";
+	std::cout << "RDX: 0x" << context.Rdx << "\n";
+	std::cout << "RSI: 0x" << context.Rsi << "\n";
+	std::cout << "RDI: 0x" << context.Rdi << "\n";
+	std::cout << "RSP: 0x" << context.Rsp << "\n";
+	std::cout << "RBP: 0x" << context.Rbp << "\n";
+	std::cout << "R8:  0x" << context.R8 << "\n";
+	std::cout << "R9:  0x" << context.R9 << "\n";
+	std::cout << "R10: 0x" << context.R10 << "\n";
+	std::cout << "R11: 0x" << context.R11 << "\n";
+	std::cout << "R12: 0x" << context.R12 << "\n";
+	std::cout << "R13: 0x" << context.R13 << "\n";
+	std::cout << "R14: 0x" << context.R14 << "\n";
+	std::cout << "R15: 0x" << context.R15 << "\n";
+	std::cout << "RIP: 0x" << context.Rip << "\n";
+	std::cout << "EFLAGS: 0x" << context.EFlags << "\n";
+	std::cout << "---------------------\n";
+
+	std::cout << std::dec;
+}
+
 int main(int argc, char* argv[])
 {	
 	// exit if only one argument provided
@@ -79,9 +106,10 @@ int main(int argc, char* argv[])
 			printDebugEvent(debugEvent.dwDebugEventCode);
 			if (debugEvent.u.Exception.ExceptionRecord.ExceptionCode != EXCEPTION_BREAKPOINT) break; 
 			GetThreadContext(pInfo.hThread, &context);
+			printContextFlags(context);
 			context.Rip -= 1;
 			WriteProcessMemory(process_handle, base_address, &original_byte, 1, nullptr);
-			SetThreadContext(pInfo.hThread, &context);
+ 			SetThreadContext(pInfo.hThread, &context);
 			std::cout << "Breakpoint hit at address : " << base_address << "\n";
 			break;
 		case EXIT_PROCESS_DEBUG_EVENT: 

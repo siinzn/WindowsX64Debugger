@@ -15,3 +15,4 @@
 void printDebugEvent(DWORD debug_ec);
 void installBreakPoint();
 uintptr_t convertToAddress(char* hex);
+void printContextFlags(CONTEXT context);
