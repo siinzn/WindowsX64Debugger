@@ -102,15 +102,22 @@ int main(int argc, char* argv[])
 			installBreakPoint();
 			break;
 		case EXCEPTION_DEBUG_EVENT: 
-			if (debugEvent.u.Exception.ExceptionRecord.ExceptionAddress != base_address) break;
-			printDebugEvent(debugEvent.dwDebugEventCode);
-			if (debugEvent.u.Exception.ExceptionRecord.ExceptionCode != EXCEPTION_BREAKPOINT) break; 
-			GetThreadContext(pInfo.hThread, &context);
-			printContextFlags(context);
-			context.Rip -= 1;
-			WriteProcessMemory(process_handle, base_address, &original_byte, 1, nullptr);
- 			SetThreadContext(pInfo.hThread, &context);
-			std::cout << "Breakpoint hit at address : " << base_address << "\n";
+			if (debugEvent.u.Exception.ExceptionRecord.ExceptionCode == EXCEPTION_BREAKPOINT) {
+				if (debugEvent.u.Exception.ExceptionRecord.ExceptionAddress != base_address) break;
+				printDebugEvent(debugEvent.dwDebugEventCode);
+				GetThreadContext(pInfo.hThread, &context);
+				printContextFlags(context);
+				context.Rip -= 1;
+				context.EFlags |= 0x100;
+				WriteProcessMemory(process_handle, base_address, &original_byte, 1, nullptr);
+				SetThreadContext(pInfo.hThread, &context);
+				std::cout << "Breakpoint hit at address : " << base_address << "\n";
+			}
+			else if (debugEvent.u.Exception.ExceptionRecord.ExceptionCode == EXCEPTION_SINGLE_STEP) {
+				installBreakPoint();
+				std::cout << "Single step occured, breakpoint reinstalled\n";
+			}
+			
 			break;
 		case EXIT_PROCESS_DEBUG_EVENT: 
 			printDebugEvent(debugEvent.dwDebugEventCode); debugRelationship = FALSE; 
