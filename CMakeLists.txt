@@ -12,7 +12,7 @@ endif()
 project ("WindowsX64Debugger")
 
 # Add source to this project's executable.
-add_executable (WindowsX64Debugger "src/WindowsX64Debugger.cpp" "include/WindowsX64Debugger.h")
+add_executable (WindowsX64Debugger "src/WindowsX64Debugger.cpp"  "src/Debugger.cpp" "include/Debugger.h")
 target_include_directories(WindowsX64Debugger PRIVATE "include")
 
 if (CMAKE_VERSION VERSION_GREATER 3.12)
